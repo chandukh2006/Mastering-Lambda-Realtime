@@ -201,7 +201,6 @@ This makes the solution **audit-ready**.
 - Event-driven architecture
 - Cloud security best practices
 - Operational observability
-- DevOps & SRE mindset
 
 ---
 
@@ -215,7 +214,7 @@ This makes the solution **audit-ready**.
 
 ---
 
-## 👨‍💻 Author Notes
+## 👨‍💻 KEY Notes
 
 This project reflects **real-world cloud security challenges** faced by DevOps and SRE teams and demonstrates how automation can proactively reduce risk while maintaining operational efficiency.
 
@@ -224,4 +223,5 @@ This project reflects **real-world cloud security challenges** faced by DevOps a
 ---
 
 ⭐ If this helped you, consider starring the repo and adapting it for your own environments.
+
 
