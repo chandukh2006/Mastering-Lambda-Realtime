@@ -194,7 +194,7 @@ This makes the solution **audit-ready**.
 
 ---
 
-## 🎯 Skills Demonstrated (Resume / Portfolio)
+## 🎯 Skills Demonstrated 
 
 - AWS IAM security
 - Serverless automation
@@ -224,3 +224,4 @@ This project reflects **real-world cloud security challenges** faced by DevOps a
 ---
 
 ⭐ If this helped you, consider starring the repo and adapting it for your own environments.
+
