@@ -1,23 +1,23 @@
 # 🔐 IAM Access Key Security Automation (Lower Environments Only)
 
-> **Automated detection, alerting, and deactivation of stale IAM access keys using AWS Lambda, EventBridge, SNS, and IAM**
+> Automated detection, alerting, and deactivation of stale IAM access keys using AWS Lambda, EventBridge, SNS, and IAM.
 
 ---
 
-## 📌 Overview
+# 📌 Overview
 
-This project implements an **end-to-end AWS security automation** that continuously audits IAM access keys and **automatically deactivates keys that exceed a defined age threshold**. It also sends **real-time notifications** to security and DevOps teams whenever an action is taken.
+This project implements an **end-to-end AWS security automation** that continuously audits IAM access keys and automatically deactivates keys that exceed a defined age threshold. It also sends **real-time notifications** to security and DevOps teams whenever an action is taken.
 
-The solution is intentionally designed for **lower environments only** (sandbox, dev, pre-prod) where developers often generate temporary IAM access keys and forget to rotate or delete them — a common **security and compliance risk**.
+The solution is intentionally designed for **lower environments only** (sandbox, dev, pre-prod) where developers often generate temporary IAM access keys and forget to rotate or delete them — creating potential security risks.
 
 ---
 
-## 🚨 Why This Matters (Problem Statement)
+# 🚨 Why This Matters
 
 In real-world cloud environments:
 
 - Developers create IAM access keys for testing
-- Keys remain active far beyond their intended lifespan
+- Keys remain active longer than intended
 - Long-lived credentials increase the risk of:
   - Credential leakage
   - Unauthorized access
@@ -25,112 +25,123 @@ In real-world cloud environments:
 
 Manual reviews do not scale.
 
-👉 **This automation enforces security hygiene without human intervention.**
+This automation ensures **security hygiene through automated enforcement**.
 
 ---
 
-## ❗ Important Disclaimer
+# ❗ Important Disclaimer
 
 ⚠️ **DO NOT USE IN PRODUCTION ENVIRONMENTS**
 
-Why?
+Production applications or services may rely on IAM access keys.  
+Automatic deactivation could cause **service disruption**.
 
-- Production applications or microservices may rely on IAM access keys
-- Automatic deactivation could cause **service outages**
+Recommended environments:
 
-✔️ Recommended for:
-
-- Sandbox accounts
-- Lower environments
-- Security training / demos
-- Compliance readiness testing
+- Sandbox
+- Development
+- Pre-production
+- Security demonstrations
 
 ---
 
-## 🏗️ Architecture
+# 🏗️ Architecture
 
+```mermaid
+flowchart TD
+    A[Amazon EventBridge Scheduled Rule] -->|Triggers| B[AWS Lambda IAM Key Auditor]
+
+    B --> C[IAM List Users]
+    C --> D[IAM List Access Keys]
+
+    D --> E{Is Key Active?}
+    E -- No --> D
+    E -- Yes --> F[Calculate Key Age]
+
+    F --> G{Key Age >= MAX_AGE_DAYS?}
+    G -- No --> D
+    G -- Yes --> H[IAM Update Access Key Status = Inactive]
+
+    H --> I[CloudWatch Logs Audit Trail]
+    H --> J[SNS Publish Alert]
+
+    J --> K[Email Notification to Security / DevOps Team]
 ```
-EventBridge (Scheduled Rule)
-        ↓
-AWS Lambda (IAM Key Auditor)
-        ↓
-IAM APIs (List / Update Keys)
-        ↓
-SNS Topic → Email Alerts
-```
 
 ---
 
-## 🧠 Design Principles
+# 🧠 Design Principles
 
-- **Automation-first security**
-- **Least privilege (recommended)**
-- **No hardcoded credentials**
-- **Serverless & cost-efficient**
-- **Audit-friendly & observable**
-
----
-
-## 🧩 Components Used
-
-| Service         | Purpose                        |
-| --------------- | ------------------------------ |
-| IAM             | User and access key management |
-| Lambda          | Core automation engine         |
-| EventBridge     | Scheduled execution            |
-| SNS             | Alerting & notifications       |
-| CloudWatch Logs | Execution visibility           |
+- Automation-first security
+- Least privilege recommended
+- No hardcoded credentials
+- Serverless architecture
+- Audit-friendly implementation
 
 ---
 
-## ⚙️ How It Works (Execution Flow)
+# 🧩 AWS Services Used
+
+| Service | Purpose |
+|------|------|
+| IAM | User and access key management |
+| Lambda | Core automation engine |
+| EventBridge | Scheduled execution |
+| SNS | Alerting and notifications |
+| CloudWatch Logs | Execution visibility |
+
+---
+
+# ⚙️ Execution Flow
 
 1. EventBridge triggers the Lambda function on a schedule
-2. Lambda lists all IAM users
-3. For each user, it retrieves access keys
+2. Lambda lists IAM users
+3. Lambda retrieves access keys for each user
 4. Active keys are evaluated based on age
-5. Keys exceeding the threshold are:
-   - Deactivated automatically
-   - Logged for audit purposes
-
-6. SNS sends a detailed alert email
+5. Keys exceeding the threshold are automatically deactivated
+6. Actions are logged to CloudWatch
+7. SNS sends an alert email to the DevOps/Security team
 
 ---
 
-## 🧪 Testing Configuration
+# 🧪 Testing Configuration
 
-For demonstration and testing:
+For testing purposes:
 
 ```bash
-MAX_AGE_DAYS = 0
+MAX_AGE_DAYS=0
 ```
 
-This forces immediate deactivation of **any active key**, making it easy to validate behavior.
+This forces immediate deactivation of any active key.
 
-➡️ **Production-like behavior:** Set to `90` or as per security policy
+Typical security policy example:
+
+```bash
+MAX_AGE_DAYS=90
+```
 
 ---
 
-## 🧑‍💻 Lambda Function (Core Logic)
+# 🧑‍💻 Lambda Responsibilities
 
-Key responsibilities:
+The Lambda function performs the following:
 
-- Enumerate IAM users
-- Identify active access keys
-- Calculate key age
-- Deactivate keys exceeding threshold
-- Notify via SNS
+- Lists IAM users
+- Retrieves access keys
+- Identifies active keys
+- Calculates key age
+- Deactivates stale keys
+- Sends notifications
+- Writes logs to CloudWatch
 
-Security note:
+Security notes:
 
 - No credentials stored in code
 - Uses IAM execution role
 
 ---
 
-## 🔐 IAM Execution Role Permissions
-
-### Required Actions
+# 🔐 Required IAM Permissions
 
 ```json
 {
@@ -144,23 +155,29 @@ Security note:
 }
 ```
 
-⚠️ For demo purposes, permissions are broad.
-
-✅ **Best Practice:** Restrict to least privilege in real environments.
+Best practice: implement **least privilege IAM policies**.
 
 ---
 
-## ⏱️ EventBridge Scheduler
+# ⏱️ EventBridge Scheduler
 
-- Schedule: Every 1 minute (testing)
-- Recommended:
-  - Daily or weekly for real usage
+Testing configuration:
 
-The rule invokes Lambda automatically without manual intervention.
+```
+rate(1 minute)
+```
+
+Typical real-world configuration:
+
+```
+cron(0 2 * * ? *)
+```
+
+Runs once daily.
 
 ---
 
-## 📧 Notification Sample
+# 📧 Notification Example
 
 ```
 Subject: IAM Access Key Audit Alert
@@ -172,56 +189,45 @@ lambda-user (AKIAxxxx) - 0 days
 
 ---
 
-## 📊 Observability & Auditing
+# 📊 Observability
 
-- CloudWatch Logs capture:
-  - Execution time
-  - Keys evaluated
-  - Keys deactivated
+CloudWatch Logs provide:
 
-- SNS ensures real-time awareness
+- Execution details
+- Keys evaluated
+- Keys deactivated
 
-This makes the solution **audit-ready**.
+SNS provides:
 
----
-
-## 🏆 Key Achievements
-
-✅ Automated IAM key lifecycle enforcement
-✅ Reduced manual security overhead
-✅ Demonstrated real-world DevOps security automation
-✅ Serverless, scalable, and cost-efficient
+- Immediate security alerts
 
 ---
 
-## 🎯 Skills Demonstrated 
+# 🏆 Key Outcomes
+
+- Automated IAM credential lifecycle enforcement
+- Reduced manual security checks
+- Implemented practical cloud security automation
+- Serverless and scalable architecture
+
+---
+
+# 🎯 Skills Demonstrated
 
 - AWS IAM security
 - Serverless automation
 - Event-driven architecture
 - Cloud security best practices
-- Operational observability
+- Observability and auditing
 
 ---
 
-## 🚀 Future Enhancements
+# 👨‍💻 Notes
 
-- Dry-run mode (report-only)
-- Tag-based exclusions
-- Slack / Teams notifications
-- Cross-account auditing
-- Terraform-based provisioning
+This project demonstrates how DevOps and SRE teams can **reduce credential risk through automation** instead of relying on manual reviews.
+
+Security should be enforced by **systems, not reminders**.
 
 ---
 
-## 👨‍💻 KEY Notes
-
-This project reflects **real-world cloud security challenges** faced by DevOps and SRE teams and demonstrates how automation can proactively reduce risk while maintaining operational efficiency.
-
-> **Security should be enforced by systems — not reminders.**
-
----
-
-⭐ If this helped you, consider starring the repo and adapting it for your own environments.
-
-
+⭐ If you find this useful, consider starring the repository.
